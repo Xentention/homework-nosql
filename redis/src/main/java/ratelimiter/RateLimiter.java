@@ -22,8 +22,16 @@ public class RateLimiter {
   }
 
   public boolean pass() {
-    // TODO: Implementation
-    return false;
+    long currentTime = Instant.now().toEpochMilli();
+    long timeDiff = currentTime - timeWindowSeconds * 1000;
+
+    long requestsCount = redis.zcount(label, timeDiff, currentTime); // считаем запросы между сейчас и timeWindowSeconds назад
+    if(requestsCount < maxRequestCount) {
+      redis.zadd(label, currentTime, String.valueOf(currentTime));  // добавляем, если приняли
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public static void main(String[] args) {
